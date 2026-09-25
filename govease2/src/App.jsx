@@ -39,7 +39,10 @@ const MainAppContent = () => {
     return (<div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased font-sans">
       
       {/* Main Institutional Navbar */}
-      <Navbar onOpenAssistant={() => setIsAssistantOpen(true)} onOpenTrackModal={() => setIsTrackModalOpen(true)} activeNavTab={activeNavTab} setActiveNavTab={setActiveNavTab} onOpenPublicVerification={() => setIsPublicVerifyOpen(true)} onOpenMasterDossier={() => setIsMasterDossierOpen(true)} onOpenRTSAAppeal={() => setIsRTSAAppellateOpen(true)} onOpenAuth={(mode) => { setAuthMode(mode); setIsAuthModalOpen(true); }}/>
+      <Navbar onOpenAssistant={() => setIsAssistantOpen(true)} onOpenTrackModal={() => setIsTrackModalOpen(true)} onStartOnboarding={() => {
+            setCurrentRole('applicant');
+            setIsOnboardingOpen(true);
+        }} activeNavTab={activeNavTab} setActiveNavTab={setActiveNavTab} onOpenPublicVerification={() => setIsPublicVerifyOpen(true)} onOpenMasterDossier={() => setIsMasterDossierOpen(true)} onOpenRTSAAppeal={() => setIsRTSAAppellateOpen(true)} onOpenAuth={(mode) => { setAuthMode(mode); setIsAuthModalOpen(true); }}/>
 
       {/* Main Body Content */}
       <main className="flex-1">

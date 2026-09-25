@@ -2,12 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { getSession } from '../../services/authService';
 import { fetchAnalytics } from '../../services/dataService';
 import { downloadCsv } from '../../utils/csv';
+
 const pretty = (s) => s.replace(/_/g, ' ');
+
 const Kpi = ({ label, value, hint, tone = 'text-slate-900' }) => (<div className="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
     <span className="text-xs font-semibold text-slate-500">{label}</span>
     <p className={`text-2xl font-bold font-mono mt-1 ${tone}`}>{value}</p>
     {hint && <span className="text-[11px] text-slate-500">{hint}</span>}
   </div>);
+
 const Bars = ({ rows, color = 'bg-purple-500' }) => {
     const max = Math.max(1, ...rows.map(r => r.value));
     return (<div className="space-y-1.5">
@@ -18,11 +21,51 @@ const Bars = ({ rows, color = 'bg-purple-500' }) => {
         </div>))}
     </div>);
 };
+
+const Donut = ({ rows, colors = ['#7c3aed','#2563eb','#f59e0b','#ef4444','#10b981','#64748b'] }) => {
+    const total = rows.reduce((s, r) => s + r.value, 0) || 1;
+    let offset = 0;
+    const r = 40, c = 2 * Math.PI * r;
+    return (<div className="flex items-center gap-5">
+      <svg viewBox="0 0 100 100" className="w-28 h-28 -rotate-90 shrink-0">
+        <circle cx="50" cy="50" r={r} fill="none" stroke="#f1f5f9" strokeWidth="14"/>
+        {rows.map((row, i) => {
+            const frac = row.value / total;
+            const dash = frac * c;
+            const el = (<circle key={row.label} cx="50" cy="50" r={r} fill="none" stroke={colors[i % colors.length]} strokeWidth="14" strokeDasharray={`${dash} ${c - dash}`} strokeDashoffset={-offset}/>);
+            offset += dash;
+            return el;
+        })}
+      </svg>
+      <div className="space-y-1 text-[11px]">
+        {rows.map((row, i) => (<div key={row.label} className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: colors[i % colors.length] }}/>
+            <span className="text-slate-600 capitalize">{row.label}</span>
+            <span className="font-mono font-bold text-slate-800 ml-auto">{row.value}</span>
+          </div>))}
+      </div>
+    </div>);
+};
+
+const LineTrend = ({ rows, color = '#2563eb' }) => {
+    const max = Math.max(1, ...rows.map(r => r.value));
+    const pts = rows.map((r, i) => `${(i / Math.max(1, rows.length - 1)) * 100},${40 - (r.value / max) * 36}`).join(' ');
+    return (<div>
+      <svg viewBox="0 0 100 44" className="w-full h-24" preserveAspectRatio="none">
+        <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" vectorEffect="non-scaling-stroke"/>
+        {rows.map((r, i) => (<circle key={r.label} cx={(i / Math.max(1, rows.length - 1)) * 100} cy={40 - (r.value / max) * 36} r="1.6" fill={color}/>))}
+      </svg>
+      <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+        {rows.map(r => <span key={r.label}>{r.label}</span>)}
+      </div>
+    </div>);
+};
+
 const Card = ({ title, children }) => (<div className="p-5 bg-white rounded-xl border border-slate-200 shadow-xs space-y-3">
     <h3 className="font-bold text-xs uppercase tracking-wider text-slate-900 pb-2 border-b border-slate-100">{title}</h3>
     {children}
   </div>);
-// Live analytics computed by the backend from real applications, licences and grievances.
+
 export const AnalyticsPanel = () => {
     const [d, setD] = useState(null);
     const [error, setError] = useState('');
@@ -58,10 +101,10 @@ export const AnalyticsPanel = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <Card title="Applications by status">
-          <Bars rows={Object.entries(d.byStatus).map(([k, v]) => ({ label: pretty(k), value: v }))}/>
+          <Donut rows={Object.entries(d.byStatus).map(([k, v]) => ({ label: pretty(k), value: v }))}/>
         </Card>
         <Card title="Submissions per month (last 6 months)">
-          {d.monthly.length ? <Bars color="bg-blue-500" rows={d.monthly.map((m) => ({ label: m.month, value: m.count }))}/> : <p className="text-xs text-slate-500">No submissions yet.</p>}
+          {d.monthly.length ? <LineTrend rows={d.monthly.map((m) => ({ label: m.month, value: m.count }))}/> : <p className="text-xs text-slate-500">No submissions yet.</p>}
         </Card>
       </div>
 

@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Building2, Bell, Sparkles, User as UserIcon, ChevronDown, CheckCircle2, RotateCcw, Search } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TRANSLATIONS } from '../../data/translations';
 import { GovAccessibilityBar } from './GovAccessibilityBar';
 import { getSession, clearSession, logoutRequest } from '../../services/authService';
 import { ChangePasswordModal } from '../auth/ChangePasswordModal';
-export const Navbar = ({ onOpenAssistant, onOpenTrackModal, activeNavTab, setActiveNavTab, onOpenPublicVerification, onOpenMasterDossier, onOpenRTSAAppeal, onOpenAuth }) => {
+
+export const Navbar = ({ onOpenAssistant, onOpenTrackModal, onStartOnboarding, activeNavTab, setActiveNavTab, onOpenPublicVerification, onOpenMasterDossier, onOpenRTSAAppeal, onOpenAuth }) => {
     const { currentUser, currentRole, setCurrentRole, language, setLanguage, notifications, markNotificationAsRead, markAllNotificationsRead, resetToDemoDefaults } = useApp();
     const [showRoleMenu, setShowRoleMenu] = useState(false);
     const [showChangePassword, setShowChangePassword] = useState(false);
@@ -14,6 +15,19 @@ export const Navbar = ({ onOpenAssistant, onOpenTrackModal, activeNavTab, setAct
     const isAuthenticated = !!getSession();
     const t = TRANSLATIONS[language];
     const unreadNotifs = notifications.filter(n => !n.isRead);
+
+    const notifRef = useRef(null);
+    const roleMenuRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotifMenu(false);
+            if (roleMenuRef.current && !roleMenuRef.current.contains(e.target)) setShowRoleMenu(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const rolesList = [
         { role: 'applicant', title: 'Applicant', subtitle: 'Applicant' },
         { role: 'officer', title: 'Officer', subtitle: 'Department Officer' },
@@ -27,13 +41,11 @@ export const Navbar = ({ onOpenAssistant, onOpenTrackModal, activeNavTab, setAct
         admin: { label: 'Admin', color: 'bg-purple-100 text-purple-800 border-purple-200' }
     };
     return (<header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs">
-      {/* Official Government of Maharashtra identity strip — minimal now */}
       <GovAccessibilityBar />
 
-      {/* Main Top Navigation - 3-Zone Contract */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        
-        {/* Zone 1: Single Wordmark / Brand */}
+
+        {/* Zone 1: Brand */}
         <div className="flex items-center gap-3">
           <button onClick={() => setActiveNavTab('landing')} className="flex items-center gap-2.5 text-left cursor-pointer group">
             <div className="w-9 h-9 rounded-lg bg-blue-900 text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:bg-blue-800 transition-colors">
@@ -51,7 +63,7 @@ export const Navbar = ({ onOpenAssistant, onOpenTrackModal, activeNavTab, setAct
           </button>
         </div>
 
-        {/* Zone 2: Workspace / utility links — only what's relevant to the logged-in session */}
+        {/* Zone 2 */}
         <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-slate-600">
           {isAuthenticated && (<button onClick={() => setActiveNavTab('dashboard')} className={`transition-colors cursor-pointer py-1 border-b-2 ${activeNavTab === 'dashboard' ? 'border-blue-900 text-blue-900 font-semibold' : 'border-transparent hover:text-slate-900'}`}>
               {currentRole === 'applicant' ? t.nav.dashboard : currentRole === 'officer' ? 'Officer Workbench' : currentRole === 'inspector' ? 'Inspector Audit' : 'Administration'}
@@ -63,7 +75,7 @@ export const Navbar = ({ onOpenAssistant, onOpenTrackModal, activeNavTab, setAct
           </button>
         </nav>
 
-        {/* Zone 3: Actions & Role Switcher */}
+        {/* Zone 3 */}
         <div className="flex items-center gap-2 sm:gap-3">
 
           {!isAuthenticated ? (<>
@@ -74,14 +86,18 @@ export const Navbar = ({ onOpenAssistant, onOpenTrackModal, activeNavTab, setAct
                 Register
               </button>
             </>) : (<>
-          {/* AI Regulatory Assistant Trigger */}
+
+          <button onClick={onStartOnboarding} className="hidden sm:flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-amber-400 hover:bg-amber-300 text-slate-900 text-xs font-bold cursor-pointer transition-colors shadow-xs">
+            Start your application
+          </button>
+
           <button onClick={onOpenAssistant} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-blue-50 text-blue-900 border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer shadow-2xs" title="Open VyaparSetu Regulatory Intelligence Assistant">
             <Sparkles className="w-3.5 h-3.5 text-blue-700"/>
             <span className="hidden sm:inline">VyaparSetu AI</span>
           </button>
 
           {/* Notifications Dropdown */}
-          <div className="relative">
+          <div className="relative" ref={notifRef}>
             <button onClick={() => setShowNotifMenu(!showNotifMenu)} className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md relative cursor-pointer transition-colors" title="Notifications">
               <Bell className="w-5 h-5"/>
               {unreadNotifs.length > 0 && (<span className="absolute top-1 right-1 w-4 h-4 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
@@ -122,7 +138,7 @@ export const Navbar = ({ onOpenAssistant, onOpenTrackModal, activeNavTab, setAct
           </div>
 
           {/* Role Switcher & User Profile Menu */}
-          <div className="relative">
+          <div className="relative" ref={roleMenuRef}>
             <button onClick={() => setShowRoleMenu(!showRoleMenu)} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-colors text-left cursor-pointer">
               <div className="w-7 h-7 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-bold overflow-hidden">
                 {currentUser.avatar ? (<img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" referrerPolicy="no-referrer"/>) : (<UserIcon className="w-3.5 h-3.5"/>)}
@@ -145,7 +161,7 @@ export const Navbar = ({ onOpenAssistant, onOpenTrackModal, activeNavTab, setAct
                   <p className="font-bold text-slate-900">{currentUser.name}</p>
                   <p className="text-slate-500 text-[11px] truncate">{currentUser.designation || currentUser.email}</p>
                 </div>
-                
+
                 <p hidden={isAuthenticated} className="px-2 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Switch Role / Persona:
                 </p>
@@ -173,7 +189,7 @@ export const Navbar = ({ onOpenAssistant, onOpenTrackModal, activeNavTab, setAct
                   <button onClick={() => {
                     const s = getSession();
                     if (s)
-                        logoutRequest(s.token); // fire-and-forget: revokes the session server-side
+                        logoutRequest(s.token);
                     clearSession();
                     setCurrentRole('applicant');
                     setActiveNavTab('landing');
@@ -192,7 +208,7 @@ export const Navbar = ({ onOpenAssistant, onOpenTrackModal, activeNavTab, setAct
 
       </div>
 
-      {/* Sub-row: Home / How It Works / Features / About — always visible, kept on its own thin line */}
+      {/* Sub-row */}
       <div className="hidden lg:flex items-center justify-center gap-8 h-10 border-t border-slate-100 bg-slate-50 text-sm font-medium text-slate-600">
         {[
             { id: 'landing', label: 'Home' },

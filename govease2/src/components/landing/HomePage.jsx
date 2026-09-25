@@ -36,7 +36,7 @@ export const HomePage = ({ onStartOnboarding, onOpenTrackModal, setActiveNavTab 
               Government of Maharashtra, Single Window Portal
             </p>
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1]">
-              Four departments.<br />One dossier. One certificate.
+              Every approval.<br />One window. Zero delays.
             </h1>
             <p className="text-base sm:text-lg text-slate-300 leading-relaxed mt-6 max-w-lg">
               File your municipal, fire, pollution and power clearances once. We
@@ -56,34 +56,25 @@ export const HomePage = ({ onStartOnboarding, onOpenTrackModal, setActiveNavTab 
             </div>
           </div>
 
-          <div className="relative h-72 sm:h-80" aria-hidden="true">
-            <svg viewBox="0 0 320 300" className="w-full h-full">
-              {departments.map((_, i) => {
-                const angle = -100 + i * 68;
-                const rad = (angle * Math.PI) / 180;
-                const x = 160 + 118 * Math.cos(rad);
-                const y = 150 + 118 * Math.sin(rad);
-                return (<line key={i} x1={x} y1={y} x2={160} y2={150} stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" strokeDasharray="3 5"/>);
-              })}
-            </svg>
-            {departments.map((dept, i) => {
-              const angle = -100 + i * 68;
-              const rad = (angle * Math.PI) / 180;
-              const x = 50 + 37 * Math.cos(rad);
-              const y = 50 + 37 * Math.sin(rad);
-              const Icon = dept.icon;
-              return (<div key={dept.label} className="absolute flex flex-col items-center gap-1.5 -translate-x-1/2 -translate-y-1/2" style={{ left: `${x}%`, top: `${y}%` }}>
-                  <div className="w-11 h-11 rounded-full bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-sm">
-                    <Icon className="w-5 h-5 text-slate-200"/>
+          {/* Visual: departments as cards, converging into one certificate badge */}
+          <div className="relative h-80 sm:h-96 flex items-center justify-center" aria-hidden="true">
+            <div className="grid grid-cols-2 gap-5 w-full max-w-sm">
+              {departments.map((dept) => {
+                const Icon = dept.icon;
+                return (
+                  <div key={dept.label} className="bg-white/5 border border-white/15 rounded-xl p-5 flex flex-col items-center gap-2.5 backdrop-blur-sm hover:bg-white/10 transition-colors">
+                    <div className="w-11 h-11 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-amber-400"/>
+                    </div>
+                    <span className="text-xs font-semibold text-white text-center">{dept.label}</span>
                   </div>
-                  <span className="text-[10px] font-medium text-slate-300 whitespace-nowrap">{dept.label}</span>
-                </div>);
-            })}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2">
-              <div className="w-20 h-20 rounded-full bg-amber-400 flex items-center justify-center shadow-lg shadow-amber-400/20">
-                <FileCheck2 className="w-9 h-9 text-slate-900"/>
-              </div>
-              <span className="text-xs font-bold text-white">Your certificate</span>
+                );
+              })}
+            </div>
+
+            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-amber-400 text-slate-900 font-bold text-sm px-5 py-3 rounded-full shadow-lg shadow-amber-400/30">
+              <FileCheck2 className="w-4 h-4"/>
+              One certificate
             </div>
           </div>
         </div>
@@ -101,7 +92,7 @@ export const HomePage = ({ onStartOnboarding, onOpenTrackModal, setActiveNavTab 
         </div>
       </section>
 
-      {/* Feature grid — what the platform actually does */}
+      {/* Feature grid */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50">
         <div className="max-w-6xl mx-auto">
           <p className="text-xs font-bold text-amber-600 text-center tracking-wide uppercase mb-3">Single-Window Core Architecture</p>

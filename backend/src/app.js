@@ -32,12 +32,21 @@ const app = express();
 sentry.init();
 
 app.use(helmet());
+
+// CORS: allow comma-separated origins from env, with a safe fallback list
+// so production still works even if CLIENT_ORIGIN isn't set on the host.
+const allowedOrigins = (
+  process.env.CLIENT_ORIGIN ||
+  'http://localhost:5173,https://code-tantra-zeta.vercel.app'
+).split(',').map((o) => o.trim());
+
 app.use(
   cors({
-    origin: (process.env.CLIENT_ORIGIN || 'http://localhost:5173').split(','),
+    origin: allowedOrigins,
     credentials: true
   })
 );
+
 app.use(express.json({ limit: '2mb' }));
 app.use(mongoSanitize());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));

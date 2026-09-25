@@ -1,0 +1,49 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      PORT: 5050
+      MONGO_URI: mongodb://mongo:27017/vyaparsetu
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in your .env file (16+ random characters)}
+      JWT_EXPIRES_IN: 7d
+      NODE_ENV: production
+      PUBLIC_API_URL: http://localhost:5050
+      RENEWAL_WINDOW_DAYS: 90
+      JOBS_INTERVAL_HOURS: 6
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports:
+      - "5050:5050"
+    volumes:
+      - uploads_data:/app/uploads
+
+  frontend:
+    build:
+      context: ./govease2
+      args:
+        VITE_API_URL: http://localhost:5050
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  mongo_data:
+  uploads_data:

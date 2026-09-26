@@ -43,12 +43,13 @@ const SECTOR_QUESTIONS = {
         { key: 'forest', label: 'Is the site near forest / eco-sensitive land?' }
     ]
 };
-export const ProjectWizard = ({ onComplete, onCancel }) => {
+export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
     const { business, updateBusinessProfile, currentUser } = useApp();
     const [currentStep, setCurrentStep] = useState(1);
     const totalSteps = 11;
-    // Form State initialized with current business profile
-    const [formData, setFormData] = useState({ ...business });
+    const isCreateMode = mode === 'create';
+    // Form State: blank for a new business, pre-filled when editing the active one
+    const [formData, setFormData] = useState(() => isCreateMode ? {} : { ...business });
     const validateRequiredFields = () => {
         if (!formData.businessName.trim()) {
             alert('Please enter the Company / Entity Legal Name.');
@@ -109,7 +110,7 @@ export const ProjectWizard = ({ onComplete, onCancel }) => {
         }
         if (!validateRequiredFields())
             return;
-        updateBusinessProfile(formData);
+        updateBusinessProfile(formData, isCreateMode);
         onComplete();
     };
     const handleBack = () => {
@@ -120,7 +121,7 @@ export const ProjectWizard = ({ onComplete, onCancel }) => {
     const handleSaveDraft = () => {
         if (!validateRequiredFields())
             return;
-        updateBusinessProfile(formData);
+        updateBusinessProfile(formData, isCreateMode);
         alert('Project onboarding draft saved successfully.');
         onCancel();
     };

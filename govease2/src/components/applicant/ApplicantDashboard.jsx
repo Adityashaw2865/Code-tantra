@@ -14,8 +14,8 @@ import { SmsNotificationDrawer } from '../modals/SmsNotificationDrawer';
 import { RoleHeaderBanner } from '../common/RoleHeaderBanner';
 import { TRANSLATIONS } from '../../data/translations';
 import { Printer, Receipt, Database, Smartphone } from 'lucide-react';
-export const ApplicantDashboard = ({ onStartOnboarding, onOpenAssistant, initialTab = 'checklist' }) => {
-    const { business, applications, approvalTypes, documents, queries, licences, schemes, grievances, submitGrievance, language } = useApp();
+export const ApplicantDashboard = ({ onStartOnboarding, onAddBusiness, onOpenAssistant, initialTab = 'checklist' }) => {
+    const { business, businesses, switchBusiness, applications, approvalTypes, documents, queries, licences, schemes, grievances, submitGrievance, language } = useApp();
     const applicableCount = evaluateRequiredApprovals(business, approvalTypes, documents)
         .filter(e => e.confidence !== 'Not Applicable').length;
     const t = TRANSLATIONS[language];
@@ -111,6 +111,14 @@ export const ApplicantDashboard = ({ onStartOnboarding, onOpenAssistant, initial
             <button onClick={onStartOnboarding} className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition-colors">
               <Sliders className="w-3.5 h-3.5 text-slate-400"/>
               <span>Edit Project Wizard</span>
+            </button>
+
+            {businesses.length > 1 && (<select value={business.id} onChange={(e) => switchBusiness(e.target.value)} className="px-2 py-1.5 rounded-lg bg-slate-800 text-slate-200 border border-slate-700 text-xs cursor-pointer">
+                {businesses.map(b => (<option key={b.id} value={b.id}>{b.businessName}</option>))}
+              </select>)}
+
+            <button onClick={onAddBusiness} className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition-colors">
+              <span>+ Add Business</span>
             </button>
           </div>
         </div>

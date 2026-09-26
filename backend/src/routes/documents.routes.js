@@ -1,13 +1,23 @@
 const express = require('express');
-const path = require('path');
-const fs = require('fs');
 const DocumentVaultItem = require('../models/DocumentVaultItem');
 const BusinessProfile = require('../models/BusinessProfile');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { upload, verifyMagicBytes } = require('../middleware/upload');
 const { writeAudit } = require('../utils/audit');
+const cloudinary = require('../config/cloudinary');
 
 const router = express.Router();
+
+// Streams a memory buffer up to Cloudinary and resolves with { secure_url, public_id }.
+function uploadBufferToCloudinary(buffer, folder) {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder, resource_type: 'auto' },
+      (err, result) => (err ? reject(err) : resolve(result))
+    );
+    uploadStream.end(buffer);
+  });
+}
 
 // POST /api/documents - upload a file for a business's document vault
 router.post('/', requireAuth, requireRole('applicant'), upload.single('file'), verifyMagicBytes, async (req, res) => {
@@ -17,6 +27,13 @@ router.post('/', requireAuth, requireRole('applicant'), upload.single('file'), v
   const business = await BusinessProfile.findById(businessId);
   if (!business || String(business.applicantId) !== String(req.user._id)) {
     return res.status(403).json({ error: 'This business profile does not belong to you' });
+  }
+
+  let uploaded;
+  try {
+    uploaded = await uploadBufferToCloudinary(req.file.buffer, `vyaparsetu/${businessId}`);
+  } catch (err) {
+    return res.status(502).json({ error: 'File storage upload failed: ' + err.message });
   }
 
   // If a document with this key already exists for the business, bump the version
@@ -31,13 +48,15 @@ router.post('/', requireAuth, requireRole('applicant'), upload.single('file'), v
     fileName: req.file.originalname,
     fileSize: `${(req.file.size / 1024).toFixed(1)} KB`,
     mimeType: req.file.mimetype,
-    storagePath: req.file.path,
+    storagePath: uploaded.secure_url,
+    cloudinaryPublicId: uploaded.public_id,
     version: nextVersion,
     verificationStatus: 'under_verification'
   });
 
   const safeDoc = doc.toObject();
   delete safeDoc.storagePath;
+  delete safeDoc.cloudinaryPublicId;
   res.status(201).json({ document: safeDoc });
 });
 
@@ -60,18 +79,20 @@ router.get('/', requireAuth, async (req, res) => {
 
 // DELETE /api/documents/:id - owner removes a vault document
 router.delete('/:id', requireAuth, requireRole('applicant'), async (req, res) => {
-  const doc = await DocumentVaultItem.findById(req.params.id).select('+storagePath');
+  const doc = await DocumentVaultItem.findById(req.params.id).select('+storagePath +cloudinaryPublicId');
   if (!doc) return res.status(404).json({ error: 'Document not found' });
   const business = await BusinessProfile.findById(doc.businessId);
   if (!business || String(business.applicantId) !== String(req.user._id)) {
     return res.status(403).json({ error: 'Not authorized' });
   }
-  if (doc.storagePath && fs.existsSync(doc.storagePath)) fs.unlinkSync(doc.storagePath);
+  if (doc.cloudinaryPublicId) {
+    await cloudinary.uploader.destroy(doc.cloudinaryPublicId, { resource_type: 'auto' }).catch(() => {});
+  }
   await doc.deleteOne();
   res.json({ deleted: true });
 });
 
-// GET /api/documents/:id/download - streams the actual file (owner or staff only)
+// GET /api/documents/:id/download - redirects to the Cloudinary file (owner or staff only)
 router.get('/:id/download', requireAuth, async (req, res) => {
   const doc = await DocumentVaultItem.findById(req.params.id).select('+storagePath');
   if (!doc) return res.status(404).json({ error: 'Document not found' });
@@ -82,11 +103,11 @@ router.get('/:id/download', requireAuth, async (req, res) => {
     return res.status(403).json({ error: 'Not authorized' });
   }
 
-  if (!fs.existsSync(doc.storagePath)) {
+  if (!doc.storagePath) {
     return res.status(410).json({ error: 'File is missing from storage' });
   }
 
-  res.download(doc.storagePath, doc.fileName);
+  res.redirect(doc.storagePath);
 });
 
 // PATCH /api/documents/:id/verify - officer verifies/rejects a document

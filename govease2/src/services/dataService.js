@@ -33,6 +33,10 @@ async function send(method, path, token, body) {
         throw new Error(data.error || `${method} ${path} failed (${res.status})`);
     return data;
 }
+export async function fetchMyBusinesses(token) {
+    const { businessProfiles } = await get('/api/business-profiles/mine-all', token);
+    return (businessProfiles || []).map(b => ({ ...b, id: b.id || b._id }));
+}
 // Pulls everything relevant for the logged-in user's role in one go.
 // Each call is independent so one failing endpoint doesn't block the rest.
 export async function fetchMyWorkspace(token) {

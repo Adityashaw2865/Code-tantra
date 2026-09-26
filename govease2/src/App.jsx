@@ -31,6 +31,7 @@ const MainAppContent = () => {
     const [isAssistantOpen, setIsAssistantOpen] = useState(false);
     const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
     const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+    const [wizardMode, setWizardMode] = useState('edit');
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authMode, setAuthMode] = useState('login');
     const [isPublicVerifyOpen, setIsPublicVerifyOpen] = useState(false);
@@ -39,15 +40,13 @@ const MainAppContent = () => {
     return (<div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 antialiased font-sans">
       
       {/* Main Institutional Navbar */}
-      <Navbar onOpenAssistant={() => setIsAssistantOpen(true)} onOpenTrackModal={() => setIsTrackModalOpen(true)} onStartOnboarding={() => {
-            setCurrentRole('applicant');
-            setIsOnboardingOpen(true);
-        }} activeNavTab={activeNavTab} setActiveNavTab={setActiveNavTab} onOpenPublicVerification={() => setIsPublicVerifyOpen(true)} onOpenMasterDossier={() => setIsMasterDossierOpen(true)} onOpenRTSAAppeal={() => setIsRTSAAppellateOpen(true)} onOpenAuth={(mode) => { setAuthMode(mode); setIsAuthModalOpen(true); }}/>
+      <Navbar onOpenAssistant={() => setIsAssistantOpen(true)} onOpenTrackModal={() => setIsTrackModalOpen(true)} activeNavTab={activeNavTab} setActiveNavTab={setActiveNavTab} onOpenPublicVerification={() => setIsPublicVerifyOpen(true)} onOpenMasterDossier={() => setIsMasterDossierOpen(true)} onOpenRTSAAppeal={() => setIsRTSAAppellateOpen(true)} onOpenAuth={(mode) => { setAuthMode(mode); setIsAuthModalOpen(true); }}/>
 
       {/* Main Body Content */}
       <main className="flex-1">
         {activeNavTab === 'landing' && (<HomePage onStartOnboarding={() => {
                 setCurrentRole('applicant');
+                setWizardMode('create');
                 setIsOnboardingOpen(true);
             }} onOpenTrackModal={() => setIsTrackModalOpen(true)} setActiveNavTab={setActiveNavTab}/>)}
 
@@ -55,6 +54,7 @@ const MainAppContent = () => {
 
         {activeNavTab === 'features' && (<FeaturesPage onStartOnboarding={() => {
                 setCurrentRole('applicant');
+                setWizardMode('create');
                 setIsOnboardingOpen(true);
             }}/>)}
 
@@ -62,7 +62,7 @@ const MainAppContent = () => {
 
         {activeNavTab === 'dashboard' && (<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <Suspense fallback={<SectionLoader />}>
-              {currentRole === 'applicant' && (<ApplicantDashboard onStartOnboarding={() => setIsOnboardingOpen(true)} onOpenAssistant={() => setIsAssistantOpen(true)}/>)}
+              {currentRole === 'applicant' && (<ApplicantDashboard onStartOnboarding={() => { setWizardMode('edit'); setIsOnboardingOpen(true); }} onAddBusiness={() => { setWizardMode('create'); setIsOnboardingOpen(true); }} onOpenAssistant={() => setIsAssistantOpen(true)}/>)}
 
               {currentRole === 'officer' && (<OfficerDashboard />)}
 
@@ -74,7 +74,7 @@ const MainAppContent = () => {
 
         {activeNavTab === 'schemes' && (<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <Suspense fallback={<SectionLoader />}>
-              <ApplicantDashboard onStartOnboarding={() => setIsOnboardingOpen(true)} onOpenAssistant={() => setIsAssistantOpen(true)} initialTab="schemes"/>
+              <ApplicantDashboard onStartOnboarding={() => { setWizardMode('edit'); setIsOnboardingOpen(true); }} onAddBusiness={() => { setWizardMode('create'); setIsOnboardingOpen(true); }} onOpenAssistant={() => setIsAssistantOpen(true)} initialTab="schemes"/>
             </Suspense>
           </div>)}
       </main>
@@ -85,7 +85,7 @@ const MainAppContent = () => {
       {/* Onboarding Wizard Modal */}
       {isOnboardingOpen && (<div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="w-full max-w-3xl my-8">
-            <ProjectWizard onComplete={() => {
+            <ProjectWizard mode={wizardMode} onComplete={() => {
                 setIsOnboardingOpen(false);
                 setActiveNavTab('dashboard');
             }} onCancel={() => setIsOnboardingOpen(false)}/>

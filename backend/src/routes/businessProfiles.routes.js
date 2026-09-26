@@ -25,6 +25,12 @@ router.get('/mine', requireAuth, requireRole('applicant'), async (req, res) => {
   res.json({ businessProfile: profile });
 });
 
+// GET /api/business-profiles/mine-all - every business the applicant owns (multi-business support)
+router.get('/mine-all', requireAuth, requireRole('applicant'), async (req, res) => {
+  const profiles = await BusinessProfile.find({ applicantId: req.user._id }).sort({ createdAt: -1 });
+  res.json({ businessProfiles: profiles });
+});
+
 // GET /api/business-profiles/:id
 router.get('/:id', requireAuth, async (req, res) => {
   const profile = await BusinessProfile.findById(req.params.id);

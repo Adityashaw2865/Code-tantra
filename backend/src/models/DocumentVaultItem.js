@@ -36,7 +36,8 @@ const documentVaultItemSchema = new mongoose.Schema(
     fileName: { type: String, required: true },
     fileSize: { type: String },
     mimeType: { type: String },
-    storagePath: { type: String, required: true, select: false }, // actual disk/S3 key, never sent to client
+    storagePath: { type: String, required: true, select: false }, // Cloudinary secure_url, never sent to client
+    cloudinaryPublicId: { type: String, select: false }, // needed to delete the file from Cloudinary
     expiryDate: { type: Date },
     verificationStatus: {
       type: String,

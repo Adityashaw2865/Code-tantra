@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { DEMO_USERS, INITIAL_BUSINESS, DEPARTMENTS, APPROVAL_TYPES, INITIAL_APPLICATIONS, INITIAL_DOCUMENTS, INITIAL_INSPECTIONS, INITIAL_LICENCES, INITIAL_SCHEMES, INITIAL_NOTIFICATIONS, INITIAL_GRIEVANCES, INITIAL_AUDIT_LOGS, INITIAL_REGULATORY_RULES, INITIAL_QUERIES } from '../data/initialData';
 import { calculateApplicationRisk } from '../services/rulesEngine';
 import { getSession } from '../services/authService';
-import { uploadDocumentAPI, verifyDocumentAPI, deleteDocumentAPI, submitGrievanceAPI, markNotificationReadAPI, markAllNotificationsReadAPI, raiseQueryAPI, respondQueryAPI, fetchInspectors, scheduleInspectionAPI, saveChecklistAPI, submitInspectionReportAPI, moveApplicationStatus, issueLicenceAPI, fetchMyWorkspace, saveBusinessProfile, createApplicationAPI, submitApplicationAPI, fetchAuditLogs, updateApprovalTypeAPI } from '../services/dataService';
+import { uploadDocumentAPI, verifyDocumentAPI, deleteDocumentAPI, submitGrievanceAPI, markNotificationReadAPI, markAllNotificationsReadAPI, raiseQueryAPI, respondQueryAPI, fetchInspectors, scheduleInspectionAPI, saveChecklistAPI, submitInspectionReportAPI, moveApplicationStatus, issueLicenceAPI, fetchMyWorkspace, fetchMyBusinesses, saveBusinessProfile, createApplicationAPI, submitApplicationAPI, fetchAuditLogs, updateApprovalTypeAPI } from '../services/dataService';
 // Mongo documents come back as _id; the whole UI expects `id`.
 function normalize(items) {
     if (!items)
@@ -41,6 +41,14 @@ export const AppProvider = ({ children }) => {
         const saved = localStorage.getItem(STORAGE_KEY_PREFIX + 'business');
         return saved ? JSON.parse(saved) : INITIAL_BUSINESS;
     });
+    const [businesses, setBusinesses] = useState([]);
+    const switchBusiness = (id) => {
+        const found = businesses.find(b => b.id === id);
+        if (found) {
+            setBusiness(found);
+            addAuditLog?.('BUSINESS_SWITCHED', 'User', id, `Switched active business to ${found.businessName}`);
+        }
+    };
     const [departments, setDepartments] = useState(DEPARTMENTS);
     const [approvalTypes, setApprovalTypes] = useState(APPROVAL_TYPES);
     // Reference data (public endpoints) from backend
@@ -177,6 +185,9 @@ export const AppProvider = ({ children }) => {
             if (data.business)
                 setBusiness({ ...data.business, id: data.business.id || data.business._id });
         }).catch(() => { });
+        if (currentRole === 'applicant') {
+            fetchMyBusinesses(session.token).then(setBusinesses).catch(() => { });
+        }
     };
     useEffect(loadWorkspace, [currentRole]);
     const addAuditLog = (action, entityType, entityId, description, prevVal, newVal) => {
@@ -215,17 +226,22 @@ export const AppProvider = ({ children }) => {
         };
         setNotifications(prev => [newNotif, ...prev]);
     };
-    const updateBusinessProfile = (updates) => {
-        const updated = { ...business, ...updates };
+    const updateBusinessProfile = (updates, forceCreate = false) => {
+        const updated = forceCreate ? { ...updates, id: null } : { ...business, ...updates };
         setBusiness(updated);
-        addAuditLog('BUSINESS_PROFILE_UPDATED', 'User', business.id, `Updated business profile parameters: ${Object.keys(updates).join(', ')}`);
-        // Sync to the backend when logged in (create the first time, patch afterwards).
+        addAuditLog('BUSINESS_PROFILE_UPDATED', 'User', updated.id || 'new', `${forceCreate ? 'Created new' : 'Updated'} business profile: ${Object.keys(updates).join(', ')}`);
+        // Sync to the backend when logged in (create the first time / forceCreate, patch afterwards).
         const session = getSession();
         if (session) {
-            const isRealId = updated.id && !String(updated.id).startsWith('biz_') && !String(updated.id).startsWith('user_');
+            const isRealId = !forceCreate && updated.id && !String(updated.id).startsWith('biz_') && !String(updated.id).startsWith('user_');
             saveBusinessProfile(session.token, isRealId ? updated.id : null, updated)
                 .then(saved => {
-                setBusiness(current => ({ ...current, ...saved, id: saved.id || saved._id }));
+                const normalized = { ...updated, ...saved, id: saved.id || saved._id };
+                setBusiness(normalized);
+                setBusinesses(prev => {
+                    const exists = prev.some(b => b.id === normalized.id);
+                    return exists ? prev.map(b => b.id === normalized.id ? normalized : b) : [normalized, ...prev];
+                });
             })
                 .catch(err => {
                 console.error('[updateBusinessProfile] backend sync failed:', err.message);
@@ -864,6 +880,8 @@ export const AppProvider = ({ children }) => {
             setLanguage,
             business,
             setBusiness,
+            businesses,
+            switchBusiness,
             departments,
             approvalTypes,
             applications,

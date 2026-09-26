@@ -1,22 +1,10 @@
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
-const { fromFile: fileTypeFromFile } = require('file-type');
+const { fileTypeFromBuffer } = require('file-type');
 
-const uploadDir = path.join(process.cwd(), process.env.UPLOAD_DIR || 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const unique = crypto.randomBytes(8).toString('hex');
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `${Date.now()}-${unique}${ext}`);
-  }
-});
+// Files are held in memory only long enough to verify + stream to Cloudinary.
+// Nothing touches local disk (safe for ephemeral hosts like Vercel).
+const storage = multer.memoryStorage();
 
 const ALLOWED_MIME = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
 const ALLOWED_EXT = new Set(['.pdf', '.jpg', '.jpeg', '.png', '.webp']);
@@ -35,22 +23,19 @@ const upload = multer({
 });
 
 // Client-reported mimetype/extension can be spoofed (fileFilter above only checks those).
-// This re-checks the file's actual magic bytes after it lands on disk, and deletes it on mismatch.
-// Use as the route's second middleware, right after `upload.single(...)`.
+// This re-checks the file's actual magic bytes in memory before it's uploaded to Cloudinary.
 async function verifyMagicBytes(req, res, next) {
   if (!req.file) return next();
   try {
-    const detected = await fileTypeFromFile(req.file.path);
+    const detected = await fileTypeFromBuffer(req.file.buffer);
     const ok = detected && ALLOWED_MIME.has(detected.mime);
     if (!ok) {
-      fs.unlink(req.file.path, () => {});
       return res.status(400).json({ error: 'File content does not match an allowed type (PDF/JPEG/PNG/WEBP)' });
     }
     next();
   } catch (err) {
-    fs.unlink(req.file.path, () => {});
     next(err);
   }
 }
 
-module.exports = { upload, uploadDir, verifyMagicBytes };
+module.exports = { upload, verifyMagicBytes };

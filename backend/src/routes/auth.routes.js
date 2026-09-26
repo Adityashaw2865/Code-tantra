@@ -5,8 +5,8 @@ const User = require('../models/User');
 const { signToken } = require('../utils/token');
 const { requireAuth } = require('../middleware/auth');
 
-const otpLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many OTP requests. Please try again later.' } });
-const forgotLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many requests. Please try again later.' } });
+const otpLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many OTP requests. Please try again later.' } });
+const forgotLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many requests. Please try again later.' } });
 const hashCode = (code) => crypto.createHash('sha256').update(code).digest('hex');
 
 const { sendSms, sendEmail } = require('../utils/messaging');
@@ -26,7 +26,7 @@ const router = express.Router();
 // Slow down brute-force attempts on login specifically
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many login attempts. Please try again later.' }

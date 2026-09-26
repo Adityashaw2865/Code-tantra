@@ -1,6 +1,6 @@
 const multer = require('multer');
 const path = require('path');
-const { fileTypeFromBuffer } = require('file-type');
+const { fromBuffer } = require('file-type');
 
 // Files are held in memory only long enough to verify + stream to Cloudinary.
 // Nothing touches local disk (safe for ephemeral hosts like Vercel).
@@ -27,7 +27,7 @@ const upload = multer({
 async function verifyMagicBytes(req, res, next) {
   if (!req.file) return next();
   try {
-    const detected = await fileTypeFromBuffer(req.file.buffer);
+    const detected = await fromBuffer(req.file.buffer);
     const ok = detected && ALLOWED_MIME.has(detected.mime);
     if (!ok) {
       return res.status(400).json({ error: 'File content does not match an allowed type (PDF/JPEG/PNG/WEBP)' });

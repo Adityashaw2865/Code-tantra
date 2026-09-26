@@ -490,10 +490,11 @@ export const AppProvider = ({ children }) => {
         addAuditLog('QUERY_RESPONDED', 'Query', queryId, `Applicant submitted response to query on ${qry.applicationId}`);
         addNotification(currentUser.id, `Query Responded: Application ${qry.applicationId}`, `Applicant has submitted clarification & documents in response to "${qry.subject}". Application moved back to active review.`, 'query', 'normal', `/officer`);
     };
-    const officerScheduleInspection = (applicationId, date, timeSlot, inspectorId) => {
+        const officerScheduleInspection = (applicationId, date, timeSlot, inspectorId) => {
         const app = applications.find(a => a.id === applicationId);
         if (!app)
             return;
+        const business = businesses.find(b => b.id === app.businessId) || {};
         const approval = approvalTypes.find(a => a.id === app.approvalTypeId);
         const inspector = { name: inspectorId === currentUser.id ? currentUser.name : 'Assigned Inspector' };
         const session = getSession();

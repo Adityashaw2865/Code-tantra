@@ -48,7 +48,7 @@ export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
     const [currentStep, setCurrentStep] = useState(1);
     const totalSteps = 11;
     const isCreateMode = mode === 'create';
-    const [formData, setFormData] = useState(() => isCreateMode ? {} : { ...business });
+    const [formData, setFormData] = useState(() => isCreateMode ? { state: 'Maharashtra' } : { ...business });
     const validateRequiredFields = () => {
         if (!formData.businessName.trim()) { alert('Please enter the Company / Entity Legal Name.'); setCurrentStep(1); return false; }
         if (!formData.panNumber.trim()) { alert('Please enter the PAN Number.'); setCurrentStep(1); return false; }

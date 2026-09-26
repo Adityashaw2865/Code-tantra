@@ -60,7 +60,16 @@ export async function fetchMyWorkspace(token) {
     const flat = (v) => (v && typeof v === 'object' && v._id ? v._id : v);
     return {
         applications: applications?.applications?.map((a) => ({
-            ...a, businessId: flat(a.businessId), approvalTypeId: flat(a.approvalTypeId), departmentId: flat(a.departmentId)
+            ...a,
+            // The backend populates businessId with the business document
+            // (including businessName) - grab that name onto the
+            // application itself before flattening businessId down to a
+            // plain string id, otherwise it's lost and any code that needs
+            // the business name (e.g. scheduling an inspection) has no way
+            // to get it for roles like officer/inspector that don't load
+            // the full `businesses` list.
+            businessName: (a.businessId && typeof a.businessId === 'object') ? a.businessId.businessName : undefined,
+            businessId: flat(a.businessId), approvalTypeId: flat(a.approvalTypeId), departmentId: flat(a.departmentId)
         })) ?? null,
         documents: documents?.documents ?? null,
         notifications: notifications?.notifications ?? null,

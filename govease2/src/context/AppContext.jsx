@@ -507,7 +507,7 @@ export const AppProvider = ({ children }) => {
                     }
                     await scheduleInspectionAPI(session.token, {
                         applicationId,
-                        businessName: business.businessName,
+                        businessName: business.businessName || app.businessName || 'Business',
                         departmentName: departments.find(d => d.id === app.departmentId)?.name || 'Regulatory Department',
                         siteAddress: business.address || 'Business premises',
                         assignedInspectorId: inspectorId,

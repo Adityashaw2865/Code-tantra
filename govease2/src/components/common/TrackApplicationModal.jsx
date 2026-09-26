@@ -3,7 +3,7 @@ import { Search, ArrowRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 export const TrackApplicationModal = ({ isOpen, onClose, onNavigateToApp }) => {
     const { applications, approvalTypes, departments, business } = useApp();
-    const [searchVal, setSearchVal] = useState('APP-2026-00127');
+    const [searchVal, setSearchVal] = useState('');
     const [searchedApp, setSearchedApp] = useState(null);
     if (!isOpen)
         return null;
@@ -30,20 +30,9 @@ export const TrackApplicationModal = ({ isOpen, onClose, onNavigateToApp }) => {
 
         <div className="space-y-3">
           <div className="flex gap-2">
-            <input type="text" value={searchVal} onChange={e => setSearchVal(e.target.value)} placeholder="Enter Application ID (e.g. APP-2026-00127)" className="flex-1 p-2.5 border border-slate-300 rounded-lg text-xs font-mono"/>
+            <input type="text" value={searchVal} onChange={e => setSearchVal(e.target.value)} placeholder="Enter Application ID (e.g. APP-2026-00006)" className="flex-1 p-2.5 border border-slate-300 rounded-lg text-xs font-mono"/>
             <button onClick={handleSearch} className="px-4 py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold cursor-pointer shadow-xs transition-colors">
               Track
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2 text-[11px] text-slate-500">
-            <span>Try sample applications:</span>
-            <button onClick={() => { setSearchVal('APP-2026-00127'); }} className="text-blue-700 underline font-mono cursor-pointer">
-              APP-2026-00127
-            </button>
-            <span>·</span>
-            <button onClick={() => { setSearchVal('APP-2026-00126'); }} className="text-blue-700 underline font-mono cursor-pointer">
-              APP-2026-00126
             </button>
           </div>
         </div>
@@ -81,7 +70,7 @@ export const TrackApplicationModal = ({ isOpen, onClose, onNavigateToApp }) => {
                 <ArrowRight className="w-3.5 h-3.5"/>
               </button>)}
           </div>) : (searchVal && (<p className="text-center text-xs text-slate-400 py-4">
-              Enter an application number to view live processing status.
+              No application found with that ID. Check the number and try again.
             </p>))}
 
       </div>

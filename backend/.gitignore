@@ -1,4 +1,4 @@
-=node_modules/
+node_modules/
 dist/
 build/
 *.log
@@ -10,5 +10,5 @@ coverage/
 *.tgz
 .vscode/
 .idea/
-backend/uploads/*
-!backend/uploads/.gitkeep
+uploads/*
+!uploads/.gitkeep

@@ -22,18 +22,28 @@ async function loadOwnInspectionOrNull(id, inspectorId) {
 
 // POST /api/inspections - officer/admin schedules an inspection for an application
 router.post('/', requireAuth, requireRole('officer', 'admin'), async (req, res) => {
+  const application = await Application.findById(req.body.applicationId);
+  if (!application) return res.status(404).json({ error: 'Application not found' });
+
+  // Only allow scheduling once the application has actually reached the
+  // inspection-required stage - stops an inspection being created (and the
+  // application's status being force-moved) while it's still e.g. 'submitted'
+  // or already 'approved'.
+  if (application.status !== 'inspection_required') {
+    return res.status(400).json({
+      error: `Cannot schedule an inspection while application status is '${application.status}'. It must first be moved to 'inspection_required'.`
+    });
+  }
+
   const inspection = await Inspection.create({ ...req.body, status: 'scheduled' });
 
-  const application = await Application.findById(req.body.applicationId);
-  if (application) {
-    application.assignedInspectorId = inspection.assignedInspectorId;
-    application.assignedInspectorName = inspection.assignedInspectorName;
-    application.status = 'inspection_scheduled';
-    addHistory(application, req.user, `Inspection ${inspection.inspectionNumber} scheduled`, {
-      newStatus: 'inspection_scheduled'
-    });
-    await application.save();
-  }
+  application.assignedInspectorId = inspection.assignedInspectorId;
+  application.assignedInspectorName = inspection.assignedInspectorName;
+  application.status = 'inspection_scheduled';
+  addHistory(application, req.user, `Inspection ${inspection.inspectionNumber} scheduled`, {
+    newStatus: 'inspection_scheduled'
+  });
+  await application.save();
 
   await notify({
     userId: inspection.assignedInspectorId,

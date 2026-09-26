@@ -212,6 +212,24 @@ router.patch('/:id/status', requireAuth, requireRole('officer', 'admin'), async 
     });
   }
 
+  // Scrutiny isn't actually done until every attached document has been
+  // individually verified - without this check an officer could move an
+  // application straight through to inspection/final review/approved while
+  // documents still sit at 'under_verification' forever, which is
+  // misleading to the applicant and skips the actual compliance check.
+  // Only gate forward progress (not sending it back via query_raised/rejected).
+  const isForwardMove = application.status === 'under_verification' && !['query_raised', 'rejected'].includes(status);
+  if (isForwardMove && application.attachedDocumentIds?.length) {
+    const docs = await DocumentVaultItem.find({ _id: { $in: application.attachedDocumentIds } }).select('name verificationStatus');
+    const unverified = docs.filter((d) => d.verificationStatus !== 'verified');
+    if (unverified.length) {
+      return res.status(400).json({
+        error: 'All attached documents must be verified before moving past scrutiny',
+        unverifiedDocuments: unverified.map((d) => d.name)
+      });
+    }
+  }
+
   const previousStatus = application.status;
   if (remarks) application.officerRemarks = remarks;
   if (status === 'rejected' && rejectionReason) application.rejectionReason = rejectionReason;

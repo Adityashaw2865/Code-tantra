@@ -48,59 +48,24 @@ export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
     const [currentStep, setCurrentStep] = useState(1);
     const totalSteps = 11;
     const isCreateMode = mode === 'create';
-    // Form State: blank for a new business, pre-filled when editing the active one
     const [formData, setFormData] = useState(() => isCreateMode ? {} : { ...business });
     const validateRequiredFields = () => {
-        if (!formData.businessName.trim()) {
-            alert('Please enter the Company / Entity Legal Name.');
-            setCurrentStep(1);
-            return false;
-        }
-        if (!formData.panNumber.trim()) {
-            alert('Please enter the PAN Number.');
-            setCurrentStep(1);
-            return false;
-        }
-        if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(formData.panNumber.trim().toUpperCase())) {
-            alert('Please enter a valid PAN Number, e.g. ABCDE1234F.');
-            setCurrentStep(1);
-            return false;
-        }
-        if (!formData.contactEmail.trim()) {
-            alert('Please enter the Contact Email.');
-            setCurrentStep(1);
-            return false;
-        }
-        if (!/^\S+@\S+\.\S+$/.test(formData.contactEmail.trim())) {
-            alert('Please enter a valid Contact Email.');
-            setCurrentStep(1);
-            return false;
-        }
-        if (!formData.contactPhone.trim()) {
-            alert('Please enter the Contact Phone.');
-            setCurrentStep(1);
-            return false;
-        }
-        if (!/^[0-9]{10}$/.test(formData.contactPhone.trim())) {
-            alert('Please enter a valid 10-digit Contact Phone.');
-            setCurrentStep(1);
-            return false;
-        }
-        if (!formData.district) {
-            alert('Please select the District.');
-            setCurrentStep(3);
-            return false;
-        }
-        if (!/^[0-9]{6}$/.test(formData.pincode.trim())) {
-            alert('Please enter a valid 6-digit Pincode.');
-            setCurrentStep(3);
-            return false;
-        }
-        if (!formData.address.trim()) {
-            alert('Please enter the full business address.');
-            setCurrentStep(3);
-            return false;
-        }
+        if (!formData.businessName.trim()) { alert('Please enter the Company / Entity Legal Name.'); setCurrentStep(1); return false; }
+        if (!formData.panNumber.trim()) { alert('Please enter the PAN Number.'); setCurrentStep(1); return false; }
+        if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(formData.panNumber.trim().toUpperCase())) { alert('Please enter a valid PAN Number, e.g. ABCDE1234F.'); setCurrentStep(1); return false; }
+        if (!formData.contactEmail.trim()) { alert('Please enter the Contact Email.'); setCurrentStep(1); return false; }
+        if (!/^\S+@\S+\.\S+$/.test(formData.contactEmail.trim())) { alert('Please enter a valid Contact Email.'); setCurrentStep(1); return false; }
+        if (!formData.contactPhone.trim()) { alert('Please enter the Contact Phone.'); setCurrentStep(1); return false; }
+        if (!/^[0-9]{10}$/.test(formData.contactPhone.trim())) { alert('Please enter a valid 10-digit Contact Phone.'); setCurrentStep(1); return false; }
+        if (!formData.businessType) { alert('Please select the Business Type.'); setCurrentStep(1); return false; }
+        if (!formData.industrySector) { alert('Please select the Industry Sector.'); setCurrentStep(2); return false; }
+        if (!formData.district) { alert('Please select the District.'); setCurrentStep(3); return false; }
+        if (!/^[0-9]{6}$/.test(formData.pincode.trim())) { alert('Please enter a valid 6-digit Pincode.'); setCurrentStep(3); return false; }
+        if (!formData.address.trim()) { alert('Please enter the full business address.'); setCurrentStep(3); return false; }
+        if (!formData.projectSize) { alert('Please select the Project Size.'); setCurrentStep(4); return false; }
+        if (!formData.landType) { alert('Please select the Land Type.'); setCurrentStep(6); return false; }
+        if (!formData.environmentalCategory) { alert('Please select the Environmental Category.'); setCurrentStep(8); return false; }
+        if (!formData.currentStage) { alert('Please select the Current Stage.'); setCurrentStep(10); return false; }
         return true;
     };
     const handleNext = () => {
@@ -161,16 +126,13 @@ export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
           {stepTitles[currentStep - 1]}
         </h2>
 
-        {/* Progress Bar */}
         <div className="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden">
           <div className="bg-blue-700 h-2 rounded-full transition-all duration-300" style={{ width: `${progressPercent}%` }}/>
         </div>
       </div>
 
-      {/* Step Content */}
       <div className="min-h-[280px] py-2">
         
-        {/* Step 1: Business Type */}
         {currentStep === 1 && (<div className="space-y-4">
             <p className="text-xs text-slate-600">
               Select the registered constitution of your business enterprise under Ministry of Corporate Affairs or Partnership Act:
@@ -222,7 +184,6 @@ export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
             </div>
           </div>)}
 
-        {/* Step 2: Industry Sector */}
         {currentStep === 2 && (<div className="space-y-4">
             <p className="text-xs text-slate-600">
               Choose your primary manufacturing or service domain. This directly governs pollution categorization and statutory inspection boards:
@@ -248,7 +209,6 @@ export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
             </div>
           </div>)}
 
-        {/* Step 3: Business Location */}
         {currentStep === 3 && (<div className="space-y-4">
             <p className="text-xs text-slate-600">
               Enter the site address where manufacturing, warehousing, or operations will occur:
@@ -290,7 +250,6 @@ export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
             </div>
           </div>)}
 
-        {/* Step 4: Project Scale */}
         {currentStep === 4 && (<div className="space-y-4">
             <p className="text-xs text-slate-600">
               Project classification under MSMED Act 2020:
@@ -310,7 +269,6 @@ export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
             </div>
           </div>)}
 
-        {/* Step 5: Investment Amount */}
         {currentStep === 5 && (<div className="space-y-4">
             <p className="text-xs text-slate-600">
               Total Proposed Capital Investment in Plant, Machinery, Building & Pollution Control (₹ Crores):
@@ -331,7 +289,6 @@ export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
             </p>
           </div>)}
 
-        {/* Step 6: Land & Building Information */}
         {currentStep === 6 && (<div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Land Allotment / Title Type</label>
@@ -354,7 +311,6 @@ export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
             </div>
           </div>)}
 
-        {/* Step 7: Expected Production & Utilities */}
         {currentStep === 7 && (<div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -374,7 +330,6 @@ export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
             </div>
           </div>)}
 
-        {/* Step 8: Environmental Impact */}
         {currentStep === 8 && (<div className="space-y-4">
             <p className="text-xs text-slate-600">
               CPCB / State Pollution Control Board Pollution Classification:
@@ -406,7 +361,6 @@ export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
             </div>
           </div>)}
 
-        {/* Step 9: Number of Employees */}
         {currentStep === 9 && (<div className="space-y-4">
             <p className="text-xs text-slate-600">
               Total Anticipated Workers & Contractual Labor Force:
@@ -421,7 +375,6 @@ export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
             </div>
           </div>)}
 
-        {/* Step 10: Current Business Stage */}
         {currentStep === 10 && (<div className="space-y-4">
             <p className="text-xs text-slate-600">
               What is the current execution status of this industrial project?
@@ -444,7 +397,6 @@ export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
             </div>
           </div>)}
 
-        {/* Step 11: Sector-Specific Details */}
         {currentStep === 11 && (<div className="space-y-3">
             <p className="text-xs text-slate-600">
               Extra questions for <b>{formData.industrySector}</b> — these decide which approvals &amp; documents apply:
@@ -468,7 +420,6 @@ export const ProjectWizard = ({ onComplete, onCancel, mode = 'edit' }) => {
 
       </div>
 
-      {/* Action Footer */}
       <div className="border-t border-slate-200 pt-4 mt-6 flex items-center justify-between">
         <button type="button" onClick={handleBack} disabled={currentStep === 1} className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-medium disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer">
           <ArrowLeft className="w-3.5 h-3.5"/>

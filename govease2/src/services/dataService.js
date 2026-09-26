@@ -1,5 +1,4 @@
 import { clearSession } from './authService';
-// Token is stale (e.g. database was reset): drop the session and reload once.
 function onUnauthorized() {
     clearSession();
     ['applications', 'documents', 'queries', 'inspections', 'licences', 'notifications', 'grievances', 'business'].forEach(k => localStorage.removeItem('govease_v2_' + k));
@@ -29,16 +28,16 @@ async function send(method, path, token, body) {
         onUnauthorized();
         throw new Error('Session expired');
     }
-    if (!res.ok)
-        throw new Error(data.error || `${method} ${path} failed (${res.status})`);
+    if (!res.ok) {
+        const detail = data.details ? ': ' + Object.keys(data.details).join(', ') : '';
+        throw new Error((data.error || `${method} ${path} failed (${res.status})`) + detail);
+    }
     return data;
 }
 export async function fetchMyBusinesses(token) {
     const { businessProfiles } = await get('/api/business-profiles/mine-all', token);
     return (businessProfiles || []).map(b => ({ ...b, id: b.id || b._id }));
 }
-// Pulls everything relevant for the logged-in user's role in one go.
-// Each call is independent so one failing endpoint doesn't block the rest.
 export async function fetchMyWorkspace(token) {
     const safe = async (p) => {
         try {
@@ -75,8 +74,6 @@ export async function fetchMyWorkspace(token) {
         queries: queries?.queries?.map((q) => ({ ...q, applicationId: flat(q.applicationId) })) ?? null
     };
 }
-// Business profile: create on first save, patch on every save after that.
-// (existingId is null the very first time the applicant fills the onboarding wizard.)
 export async function saveBusinessProfile(token, existingId, payload) {
     if (existingId) {
         const { businessProfile } = await send('PATCH', `/api/business-profiles/${existingId}`, token, payload);
@@ -93,8 +90,6 @@ export async function submitApplicationAPI(token, applicationId) {
     const { application } = await send('POST', `/api/applications/${applicationId}/submit`, token);
     return application;
 }
-// Mirrors backend ALLOWED_TRANSITIONS so the UI can jump to a target status
-// (e.g. submitted -> approved) by walking each required step.
 const NEXT = {
     draft: ['ready_for_submission'], ready_for_submission: ['submitted'],
     submitted: ['under_verification', 'rejected'],
@@ -190,7 +185,6 @@ export async function assignOfficerAPI(token, applicationId, officerId, officerN
     const { application } = await send('PATCH', `/api/applications/${applicationId}/assign-officer`, token, { officerId, officerName });
     return application;
 }
-// Downloads the real file with the auth token and opens it in a new tab.
 export async function openDocumentFile(token, id) {
     const res = await fetch(`${API}/api/documents/${id}/download`, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok)
@@ -198,7 +192,6 @@ export async function openDocumentFile(token, id) {
     const blob = await res.blob();
     window.open(URL.createObjectURL(blob), '_blank');
 }
-// ---- Admin: audit ledger, rules, grievances, users, public verify
 export async function fetchAuditLogs(token) {
     const data = await get('/api/audit-logs', token);
     return (data.logs || []).map((l) => ({
@@ -230,7 +223,6 @@ export async function fetchUsers(token) {
 }
 export const createUserAPI = (token, body) => send('POST', '/api/users', token, body);
 export const deactivateUserAPI = (token, id) => send('PATCH', `/api/users/${id}/deactivate`, token);
-// Public (no login): verify a licence by QR code or licence number.
 export async function verifyLicenceAPI(code) {
     try {
         const res = await fetch(`${API}/api/licences/verify/${encodeURIComponent(code.trim())}`);
@@ -243,7 +235,6 @@ export async function verifyLicenceAPI(code) {
         return null;
     }
 }
-// Downloads the real PDF certificate (with QR) and saves it.
 export async function downloadCertificate(token, licenceId, licenceNumber) {
     const res = await fetch(`${API}/api/licences/${licenceId}/certificate`, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok)
@@ -257,9 +248,7 @@ export async function downloadCertificate(token, licenceId, licenceNumber) {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
-// ---- Analytics, application explorer, catalog management (admin)
 export const fetchAnalytics = (token) => get('/api/analytics/summary', token);
-// Raw list (business / approval names populated) for the admin applications explorer.
 export async function fetchApplicationsRaw(token) {
     const data = await get('/api/applications', token);
     return data.applications || [];
@@ -272,7 +261,6 @@ export async function saveApprovalTypeAPI(token, id, payload) {
     const data = await send(id ? 'PATCH' : 'POST', id ? `/api/approval-types/${id}` : '/api/approval-types', token, payload);
     return data.approvalType;
 }
-// ---- Consolidated treasury payment (MahaGRAS-style single-window fee settlement)
 export async function createPaymentAPI(token, businessId, approvalTypeIds, method) {
     const res = await fetch(`${API}/api/payments`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -283,7 +271,6 @@ export async function createPaymentAPI(token, businessId, approvalTypeIds, metho
         throw new Error(data.error || `Payment failed (${res.status})`);
     return data.payment;
 }
-// Downloads the real PDF e-Challan receipt for a completed payment.
 export async function downloadPaymentReceipt(token, paymentId, grnNumber) {
     const res = await fetch(`${API}/api/payments/${paymentId}/receipt`, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok)

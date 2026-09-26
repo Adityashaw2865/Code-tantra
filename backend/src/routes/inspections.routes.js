@@ -2,6 +2,7 @@ const express = require('express');
 const Inspection = require('../models/Inspection');
 const Application = require('../models/Application');
 const BusinessProfile = require('../models/BusinessProfile');
+const User = require('../models/User');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { writeAudit } = require('../utils/audit');
 const { notify } = require('../utils/notify');
@@ -35,7 +36,20 @@ router.post('/', requireAuth, requireRole('officer', 'admin'), async (req, res) 
     });
   }
 
-  const inspection = await Inspection.create({ ...req.body, status: 'scheduled' });
+  // Make sure whoever is being assigned is actually an active inspector -
+  // without this check, an officer could (accidentally or otherwise) assign
+  // any user id and the inspection would silently vanish from every
+  // inspector's queue since that queue is filtered by role: 'inspector'.
+  const inspector = await User.findById(req.body.assignedInspectorId);
+  if (!inspector || inspector.role !== 'inspector' || inspector.isActive === false) {
+    return res.status(400).json({ error: 'assignedInspectorId must belong to an active inspector' });
+  }
+
+  const inspection = await Inspection.create({
+    ...req.body,
+    assignedInspectorName: inspector.name,
+    status: 'scheduled'
+  });
 
   application.assignedInspectorId = inspection.assignedInspectorId;
   application.assignedInspectorName = inspection.assignedInspectorName;
